@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-Commerce BFF (Backend for Frontend)
 
-## Getting Started
+## Architecture
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+┌─────────┐     ┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
+│ Browser │───▶│   Gateway   │───▶│  Next.js    │───▶│  Microservices   │
+│         │     │   (8888)    │     │  BFF (3000) │     │  (via Gateway)   │
+└─────────┘     └─────────────┘     └─────────────┘     └──────────────────┘
+                      │
+                      ▼
+               ┌─────────────┐
+               │ Auth Server │
+               │   (9000)    │
+               └─────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### How It Works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Browser** sends requests to **Gateway** (port 8888)
+2. **Gateway** handles OAuth2/PKCE authentication
+3. **Gateway** forwards requests to **BFF** with `Authorization` header (via `TokenRelay`)
+4. **BFF** decodes JWT (no verification needed - Gateway already validated)
+5. **BFF** calls microservices through Gateway with forwarded token
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+e-com2/
+├── app/
+│   ├── api/                    # BFF API Routes
+│   │   ├── auth/me/route.ts    # Get current user from JWT
+│   │   ├── products/           # Product CRUD endpoints
+│   │   └── orders/             # Order CRUD endpoints
+│   ├── products/page.tsx       # Products page
+│   ├── orders/page.tsx         # Orders page
+│   ├── layout.tsx              # Root layout
+│   └── page.tsx                # Home page
+├── components/
+│   ├── ui/                     # Reusable UI components
+│   ├── Navbar.tsx              # Navigation with auth
+│   └── AuthStatus.tsx          # Auth status display
+├── lib/
+│   ├── api/
+│   │   ├── client.ts           # Service client for API calls
+│   │   └── config.ts           # API configuration
+│   ├── auth/
+│   │   └── index.ts            # Auth utilities (JWT decode, token extract)
+│   ├── store/                  # Redux store
+│   │   ├── slices/             # Redux slices (products, orders)
+│   │   └── hooks.ts            # Typed Redux hooks
+│   └── types/                  # TypeScript types
+└── .env.local                  # Environment variables
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Create `.env.local`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+# BFF calls microservices through Gateway (server-side)
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8888
+GATEWAY_URL=http://localhost:8888
 
-## Deploy on Vercel
+# Browser redirects for OAuth2 login/logout
+NEXT_PUBLIC_LOGIN_URL=http://localhost:8888/oauth2/authorization/api-gateway-client
+NEXT_PUBLIC_LOGOUT_URL=http://localhost:8888/logout
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Access via Gateway: `http://localhost:8888/bff/`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API Routes
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/auth/me` | Get current user from JWT |
+| GET | `/api/products` | List all products |
+| POST | `/api/products` | Create a product |
+| GET | `/api/products/[id]` | Get product by ID |
+| PUT | `/api/products/[id]` | Update product |
+| DELETE | `/api/products/[id]` | Delete product |
+| GET | `/api/orders` | List all orders |
+| POST | `/api/orders` | Create an order |
+| GET | `/api/orders/[id]` | Get order by ID |
+| DELETE | `/api/orders/[id]` | Delete order |
