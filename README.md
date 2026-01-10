@@ -58,13 +58,10 @@ e-com2/
 Create `.env.local`:
 
 ```env
-# BFF calls microservices through Gateway (server-side)
+# Gateway URL - Browser calls Gateway directly for all API requests
+# Gateway handles OAuth2 authentication (session-based) and routes to microservices
 NEXT_PUBLIC_GATEWAY_URL=http://localhost:8888
-GATEWAY_URL=http://localhost:8888
 
-# Browser redirects for OAuth2 login/logout
-NEXT_PUBLIC_LOGIN_URL=http://localhost:8888/oauth2/authorization/api-gateway-client
-NEXT_PUBLIC_LOGOUT_URL=http://localhost:8888/logout
 ```
 
 Access via Gateway: `http://localhost:8888/bff/`
