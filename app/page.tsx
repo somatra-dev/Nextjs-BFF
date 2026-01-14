@@ -40,7 +40,7 @@ export default function Home() {
         </div>
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>Access via Gateway: http://localhost:8888/bff/</p>
+          <p>Access via Gateway: http://localhost:8888</p>
         </div>
       </div>
     </div>
